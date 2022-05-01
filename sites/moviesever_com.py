@@ -31,11 +31,10 @@ def load():
 def __isSeriesEverAvaiable():
     cph = cPluginHandler()
 
-    for site in cph.getAvailablePlugins():
-        if site['id'] == SERIESEVER_IDENTIFIER:
-            return True
-
-    return False
+    return any(
+        site['id'] == SERIESEVER_IDENTIFIER
+        for site in cph.getAvailablePlugins()
+    )
 
 
 def __getHtmlContent(sUrl=None):
@@ -69,7 +68,7 @@ def showSearch():
     oGui = cGui()
 
     sSearchText = oGui.showKeyBoard()
-    if (sSearchText != False and sSearchText != ''):
+    if sSearchText not in [False, '']:
         _search(oGui, sSearchText)
     else:
         return
@@ -79,7 +78,7 @@ def showSearch():
 
 
 def _search(oGui, sSearchText):
-    showMovies(oGui, URL_MAIN + '?s=' + sSearchText, True)
+    showMovies(oGui, f'{URL_MAIN}?s={sSearchText}', True)
 
 
 def showGenresMenu():
@@ -115,7 +114,7 @@ def showMovies(oGui = False, sUrl=False, bShowAllPages=False):
     if oParams.exist('bShowAllPages'):
         bShowAllPages = oParams.getValue('bShowAllPages')
 
-    sPagePattern = '%spage/(.*?)/' % sUrl
+    sPagePattern = f'{sUrl}page/(.*?)/'
 
     # request
     sHtmlContent = __getHtmlContent(sUrl)
@@ -123,11 +122,7 @@ def showMovies(oGui = False, sUrl=False, bShowAllPages=False):
     oParser = cParser()
     aPages = oParser.parse(sHtmlContent, sPagePattern)
 
-    pages = 1
-
-    if aPages[0] and bShowAllPages:
-        pages = aPages[1][-1]
-
+    pages = aPages[1][-1] if aPages[0] and bShowAllPages else 1
     bInternGui = False
 
     if not oGui:
@@ -139,7 +134,7 @@ def showMovies(oGui = False, sUrl=False, bShowAllPages=False):
 
     if int(pages) > 1:
         for x in range(2, int(pages) + 1):
-            sHtmlContentPage = __getHtmlContent('%spage/%s/' % (sUrl, str(x)))
+            sHtmlContentPage = __getHtmlContent(f'{sUrl}page/{str(x)}/')
             __getMovies(oGui, sHtmlContentPage)
 
     if bInternGui:
@@ -159,22 +154,20 @@ def __getMovies(oGui, sHtmlContent):
         for link, span, img, title in aResult[1]:
             title = unescape(title.decode('utf-8')).encode('utf-8')
             # TODO: Looking for span isn't the best way, but the only difference I found
-            if "span" not in span:
-                if __isSeriesEverAvaiable():
-                    url = __getSELink(link)
-
-                    if url:
-                        guiElement = cGuiElement(title, SERIESEVER_IDENTIFIER, 'showMovie')
-                        guiElement.setMediaType('movie')
-                        guiElement.setThumbnail(img)
-                        oParams.addParams({'sUrl': url})
-                        oGui.addFolder(guiElement, oParams)
-            else:
+            if "span" in span:
                 guiElement = cGuiElement(title, SITE_IDENTIFIER, 'showHosters')
                 guiElement.setMediaType('movie')
                 guiElement.setThumbnail(img)
                 oParams.addParams({'sUrl': link, 'Title': title})
                 oGui.addFolder(guiElement, oParams, bIsFolder=False)
+
+            elif __isSeriesEverAvaiable():
+                if url := __getSELink(link):
+                    guiElement = cGuiElement(title, SERIESEVER_IDENTIFIER, 'showMovie')
+                    guiElement.setMediaType('movie')
+                    guiElement.setThumbnail(img)
+                    oParams.addParams({'sUrl': url})
+                    oGui.addFolder(guiElement, oParams)
 
 
 def __decode(text):
@@ -234,9 +227,7 @@ def getHoster(sHtmlContent, hosters):
     aResult = oParser.parse(sHtmlContent, sPattern)
 
     if aResult[0]:
-        hoster = dict()
-
-        hoster['link'] = aResult[1][0]
+        hoster = {'link': aResult[1][0]}
 
         hname = 'Unknown Hoster'
         try:
@@ -260,9 +251,5 @@ def getHosterUrl(sUrl=False):
     if not sUrl:
         sUrl = oParams.getValue('url')
 
-    results = []
-    result = {}
-    result['streamUrl'] = sUrl
-    result['resolved'] = False
-    results.append(result)
-    return results
+    result = {'streamUrl': sUrl, 'resolved': False}
+    return [result]

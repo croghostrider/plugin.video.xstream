@@ -7,7 +7,6 @@ class cParser:
         if (len(aMatches) == 1):
             aMatches[0] = self.__replaceSpecialCharacters(aMatches[0])
             return True, aMatches[0]
-            return False, aMatches
 
     def __replaceSpecialCharacters(self, sString):
         return sString.replace('\\/','/')

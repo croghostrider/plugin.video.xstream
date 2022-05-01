@@ -4,9 +4,9 @@ import sys
 class ParameterHandler:
 	
     def __init__(self):          
-        params = dict()
+        params = {}
         if len(sys.argv)>=2 and len(sys.argv[2])>0:               
-            params = dict(part.split('=') for part in sys.argv[ 2 ][ 1: ].split('&')) 
+            params = dict(part.split('=') for part in sys.argv[ 2 ][ 1: ].split('&'))
         for param in params:
             params[param]=urllib.unquote_plus(params[param])
         self.__params = params
@@ -21,11 +21,7 @@ class ParameterHandler:
         '''
         returns value of one parameter as string, if parameter does not exists "False" is returned
         '''
-        if (self.exist(paramName)):
-            return self.__params[paramName]
-            #paramValue = self.__params[paramName]                    
-            #return urllib.unquote_plus(paramValue)
-        return False
+        return self.__params[paramName] if (self.exist(paramName)) else False
 
     def exist(self, paramName):
         '''
@@ -56,7 +52,7 @@ class ParameterHandler:
 
 
     def getParameterAsUri(self):
-        outParams = dict()
+        outParams = {}
         #temp solution
         try:
             del self.__params['params']
@@ -74,7 +70,7 @@ class ParameterHandler:
             del self.__params['site']
         except:
             pass
-        
+
         if len(self.__params) > 0:
             for param in self.__params:
                 if len(self.__params[param])<1:

@@ -9,21 +9,21 @@ class cHosterHandler:
     def getUrl(self, oHoster):
         sUrl = oHoster.getUrl()
         if (oHoster.checkUrl(sUrl)):
-            oRequest = cRequestHandler(sUrl)            
+            oRequest = cRequestHandler(sUrl)
             sContent = oRequest.request()
             pattern = oHoster.getPattern()
             if type(pattern) == type(''):
                 aMediaLink = cParser().parse(sContent, oHoster.getPattern())
                 if (aMediaLink[0] == True):
-                    logger.info('hosterhandler: ' + aMediaLink[1][0])
+                    logger.info(f'hosterhandler: {aMediaLink[1][0]}')
                     return True, aMediaLink[1][0]
             else:
                 for p in pattern:
                     aMediaLink = cParser().parse(sContent, p)
                     if (aMediaLink[0] == True):
-                        logger.info('hosterhandler: ' + aMediaLink[1][0])
+                        logger.info(f'hosterhandler: {aMediaLink[1][0]}')
                         return True, aMediaLink[1][0]
-                        
+
         return False, ''
 
     def getHoster2(self, sHoster):    

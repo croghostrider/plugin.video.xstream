@@ -15,21 +15,17 @@ def run():
 
 
 def changeWatched(params):
-    if not cConfig().getSetting('metahandler')=='true':
+    if cConfig().getSetting('metahandler') != 'true':
         return
     #videoType, name, imdbID, season=season, episode=episode, year=year, watched=watched
     try:
         from metahandler import metahandlers
         meta = metahandlers.MetaData()
-        season = ''
-        episode = ''
         mediaType = params.getValue('mediaType')
         imdbID = params.getValue('imdbID')
         name = params.getValue('title')
-        if params.exist('season'):
-            season = params.getValue('season')
-        if params.exist('episode'):
-            episode = params.getValue('episode')
+        season = params.getValue('season') if params.exist('season') else ''
+        episode = params.getValue('episode') if params.exist('episode') else ''
         if imdbID:
             meta.change_watched(mediaType, name, imdbID, season=season, episode=episode)
             xbmc.executebuiltin("XBMC.Container.Refresh")
@@ -118,83 +114,81 @@ def updateMeta(params):
 
 
 def parseUrl():
-  params = ParameterHandler()
+    params = ParameterHandler()
 
-  # If no function is set, we set it to the default "load" function
-  if params.exist('function'):
-    sFunction = params.getValue('function')
-    if sFunction == 'spacer':
-        return True
-    elif sFunction == 'clearCache':
-        from resources.lib.handler.requestHandler import cRequestHandler
-        cRequestHandler('dummy').clearCache()
-        return
-    elif sFunction == 'changeWatched':
-        changeWatched(params)
-        return
-    elif sFunction == 'updateMeta':
-        updateMeta(params) 
-        return
-  else:
-    sFunction = 'load'
+    # If no function is set, we set it to the default "load" function
+    if params.exist('function'):
+      sFunction = params.getValue('function')
+      if sFunction == 'spacer':
+          return True
+      elif sFunction == 'clearCache':
+          from resources.lib.handler.requestHandler import cRequestHandler
+          cRequestHandler('dummy').clearCache()
+          return
+      elif sFunction == 'changeWatched':
+          changeWatched(params)
+          return
+      elif sFunction == 'updateMeta':
+          updateMeta(params) 
+          return
+    else:
+      sFunction = 'load'
 
-  # Test if we should run a function on a special site
-  if params.exist('site'):
-    sSiteName = params.getValue('site')
-    logger.info (params.getAllParameters())
-    
-    if params.exist('playMode'):
-        from resources.lib.gui.hoster import cHosterGui
-        url = False
-        playMode = params.getValue('playMode')
-        isHoster = params.getValue('isHoster')
-        if isHoster == 'true':
-            url = params.getValue('url')    
-        if cConfig().getSetting('autoPlay')=='true' and playMode != 'jd' and playMode != 'pyload':
-            cHosterGui().streamAuto(playMode, sSiteName, sFunction)
-        else:        
-            cHosterGui().stream(playMode, sSiteName, sFunction, url)
-        return
-        
-    else:    
-        logger.info("Call function '%s' from '%s'" % (sFunction, sSiteName))
-        # If the hoster gui is called, run the function on it and return
-        if sSiteName == 'cHosterGui':
-            showHosterGui(sFunction)
-            return  
-        # If global search is called  
-        elif sSiteName == 'globalSearch':
-            searchGlobal()
-            return  
-        elif sSiteName == 'favGui':
-            showFavGui(sFunction)
-            return 
-        # If addon settings are called  
-        elif sSiteName == 'xStream':
-            oGui = cGui()
-            oGui.openSettings()
-            oGui.updateDirectory()
+      # Test if we should run a function on a special site
+    if params.exist('site'):
+        sSiteName = params.getValue('site')
+        logger.info (params.getAllParameters())
+
+        if params.exist('playMode'):
+            from resources.lib.gui.hoster import cHosterGui
+            playMode = params.getValue('playMode')
+            isHoster = params.getValue('isHoster')
+            url = params.getValue('url') if isHoster == 'true' else False
+            if cConfig().getSetting('autoPlay')=='true' and playMode != 'jd' and playMode != 'pyload':
+                cHosterGui().streamAuto(playMode, sSiteName, sFunction)
+            else:        
+                cHosterGui().stream(playMode, sSiteName, sFunction, url)
             return
-        # If the urlresolver settings are called  
-        elif sSiteName == 'urlresolver':
-            import urlresolver
-            urlresolver.display_settings()
-            return
-        # If metahandler settings are called    
-        elif sSiteName == 'metahandler':
-            import metahandler
-            metahandler.display_settings()
-            return
-        else:
-            # Else load any other site as plugin and run the function
-            plugin = __import__(sSiteName, globals(), locals())
-            function = getattr(plugin, sFunction)
-            function()
-    
-  else:
-      xbmc.executebuiltin('XBMC.RunPlugin(%s?function=clearCache)' % sys.argv[0])
-      # As a default if no site was specified, we run the default starting gui with all plugins
-      showMainMenu(sFunction)
+
+        else:    
+            logger.info("Call function '%s' from '%s'" % (sFunction, sSiteName))
+            # If the hoster gui is called, run the function on it and return
+            if sSiteName == 'cHosterGui':
+                showHosterGui(sFunction)
+                return  
+            # If global search is called  
+            elif sSiteName == 'globalSearch':
+                searchGlobal()
+                return  
+            elif sSiteName == 'favGui':
+                showFavGui(sFunction)
+                return 
+            # If addon settings are called  
+            elif sSiteName == 'xStream':
+                oGui = cGui()
+                oGui.openSettings()
+                oGui.updateDirectory()
+                return
+            # If the urlresolver settings are called  
+            elif sSiteName == 'urlresolver':
+                import urlresolver
+                urlresolver.display_settings()
+                return
+            # If metahandler settings are called    
+            elif sSiteName == 'metahandler':
+                import metahandler
+                metahandler.display_settings()
+                return
+            else:
+                # Else load any other site as plugin and run the function
+                plugin = __import__(sSiteName, globals(), locals())
+                function = getattr(plugin, sFunction)
+                function()
+
+    else:
+        xbmc.executebuiltin(f'XBMC.RunPlugin({sys.argv[0]}?function=clearCache)')
+        # As a default if no site was specified, we run the default starting gui with all plugins
+        showMainMenu(sFunction)
 
 def showMainMenu(sFunction):    
     oGui = cGui()

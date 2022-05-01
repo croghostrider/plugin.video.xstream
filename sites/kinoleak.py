@@ -76,46 +76,46 @@ def showGenreAnimation():
     _parseMovieList(URL_ANIMATION)
 
 def showSearch():
-    oGui = cGui()
+  oGui = cGui()
 
-    sSearchText = oGui.showKeyBoard()
-    if (sSearchText != False and sSearchText != ''):
-        _search(oGui, sSearchText)
-    else:
-        return
-    oGui.setEndOfDirectory()
+  sSearchText = oGui.showKeyBoard()
+  if sSearchText not in [False, '']:
+    _search(oGui, sSearchText)
+  else:
+    return
+  oGui.setEndOfDirectory()
  
        
 def _search(oGui, sSearchString):
-    searchUrl = URL_MAIN + 'livesearch.php?q='
-    
-    oRequest = cRequestHandler(searchUrl + sSearchString)
-    content = oRequest.request()
-    searchPattern = "<table.*?<a href='([^']+)'.*?<img src='([^']+)'.*?>([^<>']+)</a>"
-    oParser = cParser()
-    aResult = oParser.parse(content, searchPattern)
-    if not aResult[0]:
-        return
-    ###### parse entries
-    params = ParameterHandler()
-    function = 'getHosters'
-    iTotal = len(aResult[1])
-    for link, img, title in aResult[1]:
-        sLabel = title.split('(')
-        sTitle = sLabel[0].strip()
-        sNextUrl = link
-        params.setParam('siteUrl',sNextUrl)
-        oGuiElement = cGuiElement(sTitle, SITE_IDENTIFIER, function)
-        oGuiElement.setThumbnail(img)
-        #oGuiElement.setMediaType('movie')
-        if len(sLabel)>1:
-            year = sLabel[-1].replace(')','')
-            oGuiElement.setYear(year)
-        if 'site=Movies' in link:
-            oGuiElement.setMediaType('movie')
-            oGui.addFolder(oGuiElement, params, bIsFolder = False, iTotal = iTotal)
-        else:
-            continue
+  searchUrl = f'{URL_MAIN}livesearch.php?q='
+
+  oRequest = cRequestHandler(searchUrl + sSearchString)
+  content = oRequest.request()
+  searchPattern = "<table.*?<a href='([^']+)'.*?<img src='([^']+)'.*?>([^<>']+)</a>"
+  oParser = cParser()
+  aResult = oParser.parse(content, searchPattern)
+  if not aResult[0]:
+      return
+  ###### parse entries
+  params = ParameterHandler()
+  function = 'getHosters'
+  iTotal = len(aResult[1])
+  for link, img, title in aResult[1]:
+      sLabel = title.split('(')
+      sTitle = sLabel[0].strip()
+      sNextUrl = link
+      params.setParam('siteUrl',sNextUrl)
+      oGuiElement = cGuiElement(sTitle, SITE_IDENTIFIER, function)
+      oGuiElement.setThumbnail(img)
+      #oGuiElement.setMediaType('movie')
+      if len(sLabel)>1:
+          year = sLabel[-1].replace(')','')
+          oGuiElement.setYear(year)
+      if 'site=Movies' in link:
+          oGuiElement.setMediaType('movie')
+          oGui.addFolder(oGuiElement, params, bIsFolder = False, iTotal = iTotal)
+      else:
+          continue
 
 
 def _parseMovieList(url): 
@@ -155,34 +155,30 @@ def _parseMovieList(url):
 #---------------------------------------------------------------------   
   
 def getHosters():
-    oParams = ParameterHandler() #Parameter laden
-    sUrl = oParams.getValue('siteUrl')  # Weitergegebenen Urlteil aus den Parametern holen
+  oParams = ParameterHandler() #Parameter laden
+  sUrl = oParams.getValue('siteUrl')  # Weitergegebenen Urlteil aus den Parametern holen
 
-    oRequestHandler = cRequestHandler(URL_MAIN+sUrl) # gesamte Url zusammesetzen
-    sHtmlContent = oRequestHandler.request()         # Seite abrufen
-    
-    sPattern = 'iframe src="(http[^"]+)"'
-    oParser = cParser()
-    aResult = oParser.parse(sHtmlContent, sPattern, ignoreCase = True)
-    hosters = []                                     # hosterliste initialisieren
+  oRequestHandler = cRequestHandler(URL_MAIN+sUrl) # gesamte Url zusammesetzen
+  sHtmlContent = oRequestHandler.request()         # Seite abrufen
+
+  sPattern = 'iframe src="(http[^"]+)"'
+  oParser = cParser()
+  aResult = oParser.parse(sHtmlContent, sPattern, ignoreCase = True)
+  hosters = []                                     # hosterliste initialisieren
+  if (aResult[0] == True):
+    for aEntry in aResult[1]:
+      hoster = {
+          'link': aEntry,
+          'name': aEntry.split('//')[-1].split('/')[0].split('.')[-2],
+      }
+      hosters.append(hoster)
     sFunction='getHosterUrl'                         # folgeFunktion festlegen
-    if (aResult[0] == True):
-        for aEntry in aResult[1]:
-            hoster = {}
-            hoster['link'] = aEntry
-            # extract domain name
-            hoster['name'] = aEntry.split('//')[-1].split('/')[0].split('.')[-2]
-            hosters.append(hoster)
-        hosters.append(sFunction)
-    return hosters
+    hosters.append(sFunction)
+  return hosters
   
 def getHosterUrl(sStreamUrl = False):
-   if not sStreamUrl:
-       params = ParameterHandler()
-       sStreamUrl = oParams.getValue('url')
-   results = []
-   result = {}
-   result['streamUrl'] = sStreamUrl
-   result['resolved'] = False
-   results.append(result)
-   return results
+  if not sStreamUrl:
+      params = ParameterHandler()
+      sStreamUrl = oParams.getValue('url')
+  result = {'streamUrl': sStreamUrl, 'resolved': False}
+  return [result]

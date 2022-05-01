@@ -14,10 +14,10 @@ class cPluginHandler:
         self.settingsFile = os.path.join(self.rootFolder, 'resources', 'settings.xml')
         self.profilePath = common.profilePath
         self.pluginDBFile = translatePath(os.path.join(self.profilePath,'pluginDB'))
-        logger.info('profile folder: %s' % self.profilePath)
-        logger.info('root folder: %s' % self.rootFolder)
+        logger.info(f'profile folder: {self.profilePath}')
+        logger.info(f'root folder: {self.rootFolder}')
         self.defaultFolder =  translatePath(os.path.join(self.rootFolder, 'sites'))
-        logger.info('default sites folder: %s' % self.defaultFolder)
+        logger.info(f'default sites folder: {self.defaultFolder}')
 
     def getAvailablePlugins(self):
         oConfig = cConfig()
@@ -29,16 +29,11 @@ class cPluginHandler:
         aFileNames = self.__getFileNamesFromFolder(self.defaultFolder)
         for sFileName in aFileNames:
             if sFileName not in pluginDB:
-                logger.info('load plugin: '+ str(sFileName))
-                # try to import plugin
-                aPlugin = self.__importPlugin(sFileName)
-                if aPlugin:
+                logger.info(f'load plugin: {str(sFileName)}')
+                if aPlugin := self.__importPlugin(sFileName):
                     pluginDB[sFileName] = aPlugin
         # check pluginDB for obsolete entries
-        deletions = []
-        for pluginID in pluginDB:
-            if pluginID not in aFileNames:
-                deletions.append(pluginID)
+        deletions = [pluginID for pluginID in pluginDB if pluginID not in aFileNames]
         for id in deletions:
             del pluginDB[id]
         self.__updatePluginDB(pluginDB)
@@ -49,45 +44,30 @@ class cPluginHandler:
         for pluginID in pluginDB:
             plugin = pluginDB[pluginID]
             sSiteName = plugin['name']
-            sPluginSettingsName = 'plugin_%s' % pluginID
-            if plugin['icon']:
-                sSiteIcon = os.path.join(sIconFolder, plugin['icon'])
-            else:
-                sSiteIcon = ''
+            sPluginSettingsName = f'plugin_{pluginID}'
+            sSiteIcon = os.path.join(sIconFolder, plugin['icon']) if plugin['icon'] else ''
             # existieren zu diesem plugin die an/aus settings
             bPlugin = oConfig.getSetting(sPluginSettingsName)
-            if (bPlugin != ''):
-                # settings gefunden
-                if (bPlugin == 'true'):
-                    aPlugins.append(self.__createAvailablePluginsItem(sSiteName, pluginID, sSiteIcon))
-            else:
-                # settings nicht gefunden, also schalten wir es trotzdem sichtbar
+            if (bPlugin != '') and (bPlugin == 'true') or bPlugin == '':
                 aPlugins.append(self.__createAvailablePluginsItem(sSiteName, pluginID, sSiteIcon))
-       
         return aPlugins
 
     def __createAvailablePluginsItem(self, sPluginName, sPluginIdentifier, sPluginIcon):
-        aPluginEntry = {}
-        aPluginEntry['name'] = sPluginName
-        aPluginEntry['id']   = sPluginIdentifier
-        aPluginEntry['icon'] = sPluginIcon
-        return aPluginEntry
+        return {'name': sPluginName, 'id': sPluginIdentifier, 'icon': sPluginIcon}
 
     def __updatePluginDB(self, data):
-        file = open(self.pluginDBFile, 'w')
-        json.dump(data,file)
-        file.close()
+        with open(self.pluginDBFile, 'w') as file:
+            json.dump(data,file)
 
     def __getPluginDB(self):
         if not os.path.exists(self.pluginDBFile):
             return dict()
-        file = open(self.pluginDBFile, 'r')
-        try:
-            data = json.load(file)
-        except ValueError:
-            logger.error("pluginDB seems corrupt, creating new one")
-            data = dict()
-        file.close()
+        with open(self.pluginDBFile, 'r') as file:
+            try:
+                data = json.load(file)
+            except ValueError:
+                logger.error("pluginDB seems corrupt, creating new one")
+                data = {}
         return data
 
     def __addPluginsToSettings(self, data):
@@ -96,21 +76,28 @@ class cPluginHandler:
         '''
         import xml.etree.ElementTree as ET
         tree = ET.parse(self.settingsFile)
-        #find Element for plugin Settings
-        pluginElem = False
-        for elem in tree.findall('category'):
-            if elem.attrib['label']=='30022':
-                pluginElem = elem
-                break
+        pluginElem = next(
+            (
+                elem
+                for elem in tree.findall('category')
+                if elem.attrib['label'] == '30022'
+            ),
+            False,
+        )
+
         if not pluginElem:
             logger.info('pluginElement not found')
             return False
         # add plugins to settings
         for pluginID in data:
             plugin = data[pluginID]
-            attrib = {'default': 'false', 'type': 'bool'}
-            attrib['id'] = 'plugin_%s' % pluginID
-            attrib['label'] = plugin['name']
+            attrib = {
+                'default': 'false',
+                'type': 'bool',
+                'id': f'plugin_{pluginID}',
+                'label': plugin['name'],
+            }
+
             newPlugin = ET.Element()
             ET.SubElement(pluginElem, 'setting', attrib)
         tree.write(self.settingsFile)
@@ -121,20 +108,25 @@ class cPluginHandler:
         '''
         import xml.etree.ElementTree as ET
         tree = ET.parse(self.settingsFile)
-        #find Element for plugin Settings
-        pluginElem = False
-        for elem in tree.findall('category'):
-            if elem.attrib['label']=='30022':
-                pluginElem = elem
-                break
+        pluginElem = next(
+            (
+                elem
+                for elem in tree.findall('category')
+                if elem.attrib['label'] == '30022'
+            ),
+            False,
+        )
+
         if not pluginElem:
             logger.info('pluginElement not found')
             return False
         # delete plugins from settings
         for elem in pluginElem.findall('setting'):
-            if 'id' in elem.attrib :
-                if elem.attrib['id'].replace('plugin_','') in pluginIDs:
-                    pluginElem.remove(elem)
+            if (
+                'id' in elem.attrib
+                and elem.attrib['id'].replace('plugin_', '') in pluginIDs
+            ):
+                pluginElem.remove(elem)
         tree.write(self.settingsFile)
 
     def __getFileNamesFromFolder(self, sFolder):

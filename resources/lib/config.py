@@ -35,19 +35,17 @@ class cConfig:
                 pass
 
     def getSetting(self, sName):
-        if (self.__bIsDharma):
+        if self.__bIsDharma:
             return self.__oSettings.getSetting(sName)
-        else:
-            try:                
-                return xbmcplugin.getSetting(sName)
-            except:
-                return ''
+        try:                
+            return xbmcplugin.getSetting(sName)
+        except:
+            return ''
 
     def getLocalizedString(self, sCode):
-        if (self.__bIsDharma):
+        if self.__bIsDharma:
             return self.__aLanguage(sCode)
-        else:
-            try:		
-                 return xbmc.getLocalizedString(sCode)
-            except:
-                return ''
+        try:		
+             return xbmc.getLocalizedString(sCode)
+        except:
+            return ''

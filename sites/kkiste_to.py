@@ -106,7 +106,7 @@ def showMovies():
     oGui.setEndOfDirectory()
 
 def _parseMedia(sUrl,sRootUrl,iPage,sPattern, oGui):
-    logger.error("parse %s with pattern %s" % (sUrl, sPattern))
+    logger.error(f"parse {sUrl} with pattern {sPattern}")
 
     oRequestHandler = cRequestHandler(sUrl)
     sHtmlContent = oRequestHandler.request()
@@ -121,7 +121,7 @@ def _parseMovie(sHtmlContent,sUrl,sRootUrl,iPage,sPattern, oGui):
         for aEntry in aResult[1]:
             oOutputParameterHandler = ParameterHandler()
             movieUrlSegment = str(aEntry[0])
-            newUrl = URL_MAIN + '/' + movieUrlSegment;
+            newUrl = f'{URL_MAIN}/{movieUrlSegment}';
 
             if (sRootUrl.startswith(URL_MOVIES_ALL) |
                 sRootUrl.startswith(URL_SEARCH)):
@@ -130,7 +130,7 @@ def _parseMovie(sHtmlContent,sUrl,sRootUrl,iPage,sPattern, oGui):
                 sMovieTitle = sMovieTitle[6:len(sMovieTitle)-15]
                 coverUrl = ''
             else:
-                coverUrl = str(aEntry[1])+"_145_215.jpg"
+                coverUrl = f"{str(aEntry[1])}_145_215.jpg"
                 sMovieTitle = str(aEntry[2]).replace(" Stream","")
             oGuiElement = cGuiElement()
             oGuiElement.setSiteName(SITE_IDENTIFIER)
@@ -157,7 +157,7 @@ def _parseMovie(sHtmlContent,sUrl,sRootUrl,iPage,sPattern, oGui):
         if (sNextPageNo != False):
             params = ParameterHandler()
             params.setParam(PARAM_ROOTURL_KEY,sRootUrl)
-            params.setParam(PARAM_URL_KEY, sRootUrl + '?page=' + sNextPageNo)
+            params.setParam(PARAM_URL_KEY, f'{sRootUrl}?page={sNextPageNo}')
             params.setParam(PARAM_PAGE_KEY,int(sNextPageNo))
             oGui.addNextPage(SITE_IDENTIFIER, 'showMovies',params)
 
@@ -185,7 +185,7 @@ def showAllSeasons():
             oGuiElement = cGuiElement()
             oGuiElement.setSiteName(SITE_IDENTIFIER)
             oGuiElement.setFunction('showEpisodes')
-            oGuiElement.setTitle('Staffel '+str(season))
+            oGuiElement.setTitle(f'Staffel {str(season)}')
             oGuiElement.setMediaType('season')
             oGuiElement.setSeason(season)
 
@@ -197,7 +197,7 @@ def showAllSeasons():
             oOutputParameterHandler.setParam('season', season)
 
             oGui.addFolder(oGuiElement,oOutputParameterHandler, iTotal = total)
-            logger.info('add object for season %s' % (season))
+            logger.info(f'add object for season {season}')
 
         logger.info("done")
 
@@ -227,7 +227,7 @@ def showEpisodes():
         oGuiElement = cGuiElement()
         oGuiElement.setFunction('_playEpisode')
         oGuiElement.setSiteName(SITE_IDENTIFIER)
-        oGuiElement.setTitle(sMovieTitle + '- S'+sSeason+'E'+str(aEntry['episode']))
+        oGuiElement.setTitle(f'{sMovieTitle}- S{sSeason}E' + str(aEntry['episode']))
         oGuiElement.setMediaType('episode')
         oGuiElement.setEpisode(aEntry['episode'])
 
@@ -245,19 +245,15 @@ def showEpisodes():
 def _playEpisode():
     params = ParameterHandler()
     sUrl = params.getValue(PARAM_URL_KEY)
-    results = []
-    result = {}
-    result['streamUrl'] = params.getValue(PARAM_URL_KEY)
-    result['resolved'] = False
+    result = {'streamUrl': params.getValue(PARAM_URL_KEY), 'resolved': False}
     result['title'] = params.getValue('sMovieTitle')+ '- S'+ params.getValue('season') + 'E' + params.getValue('episode')
-    results.append(result)
-    return results
+    return [result]
 
 
 def showSearch():
     oGui = cGui()
     sSearchText = oGui.showKeyBoard()
-    if (sSearchText != False and sSearchText != ''):
+    if sSearchText not in [False, '']:
         _search(oGui, sSearchText)
     else:
         return
@@ -290,15 +286,17 @@ def showHosters():
 
     if aResult[0]: # multipart stream
         for aEntry in aResult[1]:
-            result = {}
-            result['streamUrl'] = 'http://www.ecostream.tv/'+aEntry[0]
-            result['resolved'] = False
-            result['title'] = sMovieTitle + ' ' +aEntry[1]
+            result = {
+                'streamUrl': f'http://www.ecostream.tv/{aEntry[0]}',
+                'resolved': False,
+                'title': f'{sMovieTitle} {aEntry[1]}',
+            }
+
             results.append(result)
     return results
 
 def _mediaIsASerie(sUrl):
-    logger.info('check if %s is a serie' % (sUrl))
+    logger.info(f'check if {sUrl} is a serie')
 
     oRequestHandler = cRequestHandler(sUrl)
     sHtmlContent = oRequestHandler.request()

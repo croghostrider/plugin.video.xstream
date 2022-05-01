@@ -31,9 +31,9 @@ class XstreamPlayer(xbmc.Player):
         else:
             META = False
         if META:
-            try:                       
+            try:               
                 percent = self.playedTime/self.totalTime
-                logger.info('Watched percent '+str(int(percent*100)))                   
+                logger.info(f'Watched percent {int(percent*100)}')
                 if percent >= 0.80:
                     logger.info('Attemt to change watched status')
                     meta = metahandlers.MetaData()
@@ -51,7 +51,7 @@ class XstreamPlayer(xbmc.Player):
                         episode = params.getValue('episode')
                         if int(episode) > 0: mediaType = 'episode'
                     if imdbID and mediaType:
-                        if mediaType == 'movie' or mediaType == 'tvshow':
+                        if mediaType in ['movie', 'tvshow']:
                             metaInfo = meta.get_meta(self._mediaType, self.__sTitle, imdbID)
                         elif mediaType == 'season':
                             metaInfo = meta.get_seasons(TVShowTitle, imdbID, str(season))
@@ -95,7 +95,7 @@ class cPlayer:
         #oPlayList = self.__getPlayList()
         #xbmcPlayer.play(oPlayList)
 
-        if not cConfig().getSetting('metahandler')=='true':
+        if cConfig().getSetting('metahandler') != 'true':
             logger.info('MetaHandler is deactivated, stopping player monitor')
             return
         while (not xbmc.abortRequested) & (not xbmcPlayer.streamFinished):

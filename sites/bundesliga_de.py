@@ -41,14 +41,15 @@ def listVideos():
     if (params.exist('playlistId')):
         sPlaylistId = params.getValue('playlistId')
 
-        if not params.exist('sUrl'):
-            sUrl = URL_TV + str(sPlaylistId)
-        else:
-            sUrl = params.getValue('sUrl')
-        
+        sUrl = (
+            params.getValue('sUrl')
+            if params.exist('sUrl')
+            else URL_TV + str(sPlaylistId)
+        )
+
         if sPlaylistId == 'spieltag':
             oParser = cParser()
-            
+
             if not params.exist('saison'):
                 oRequest = cRequestHandler('http://www.bundesliga.de/de/bundesliga-tv/index.php')
                 sHtmlContent = oRequest.request()
@@ -57,8 +58,8 @@ def listVideos():
                 saison = aResult[1][0]
             else:
                 saison = params.getValue('saison')
-            
-            oRequest = cRequestHandler(sUrl+'&season='+saison+'&matchday=1')
+
+            oRequest = cRequestHandler(f'{sUrl}&season={saison}&matchday=1')
             sHtmlContent = oRequest.request()
             if sHtmlContent.find('"message":"nothing found"') != -1:
                 return False
@@ -67,22 +68,22 @@ def listVideos():
                 oGuiElement = cGuiElement()
                 oGuiElement.setSiteName(SITE_IDENTIFIER)
                 oGuiElement.setFunction('listVideos')
-                oGuiElement.setTitle('%s Spieltag Saison %s' % (matchDay,saison))
+                oGuiElement.setTitle(f'{matchDay} Spieltag Saison {saison}')
 
-                sUrl = sUrl+'&season='+saison+'&matchday='+str(matchDay)
+                sUrl = f'{sUrl}&season={saison}&matchday={str(matchDay)}'
                 oOutputParameterHandler = ParameterHandler()
                 oOutputParameterHandler.setParam('sUrl', sUrl)
                 oOutputParameterHandler.setParam('saison', saison)
                 oOutputParameterHandler.setParam('matchDay', matchDay)
                 oOutputParameterHandler.setParam('playlistId', 'spieltagEinzeln')
                 oGui.addFolder(oGuiElement, oOutputParameterHandler)
-            
+
             #ältere Saison
             oGuiElement = cGuiElement()
             oGuiElement.setSiteName(SITE_IDENTIFIER)
             oGuiElement.setFunction('listVideos')
             lastSaison = str(int(saison) - 1)
-            oGuiElement.setTitle('* Saison %s/%s *' % (lastSaison,saison))
+            oGuiElement.setTitle(f'* Saison {lastSaison}/{saison} *')
 
             oOutputParameterHandler = ParameterHandler()
             oOutputParameterHandler.setParam('sUrl', sUrl)
@@ -90,15 +91,15 @@ def listVideos():
             oOutputParameterHandler.setParam('playlistId', 'spieltag')
             oGui.addFolder(oGuiElement, oOutputParameterHandler)
 
-            
+
         elif sPlaylistId == 'clubs':
             sPattern = '<li data-club="([^"]+)" data-name="([^"]+)".*?src="([^"]+)"'
             oRequest = cRequestHandler('http://www.bundesliga.de/de/bundesliga-tv/index.php')
             sHtmlContent = oRequest.request()
-           
+
             oParser = cParser()
             aResult = oParser.parse(sHtmlContent, sPattern)
-            
+
             if (aResult[0] == False):
                 return False
             for aEntry in aResult[1]:
@@ -109,7 +110,7 @@ def listVideos():
                 sThumbnail = URL_MAIN + str(aEntry[2]).replace('variant27x27.','')
                 oGuiElement.setThumbnail(sThumbnail)
 
-                sUrl = sUrl +'&club='+str(aEntry[0])
+                sUrl = f'{sUrl}&club={str(aEntry[0])}'
                 oOutputParameterHandler = ParameterHandler()
                 oOutputParameterHandler.setParam('sUrl', sUrl)
                 oOutputParameterHandler.setParam('playlistId', 'clubVideos')
@@ -135,11 +136,11 @@ def listVideos():
                 oGuiElement.setTitle(sTitle)
                 oGuiElement.setDescription(sDescription)
                 oGuiElement.setThumbnail(sThumbnail)
-                
+
                 oOutputParameterHandler = ParameterHandler()
                 oOutputParameterHandler.setParam('sUrl', sUrl)
                 oOutputParameterHandler.setParam('sTitle', sTitle)
-                
+
                 oGui.addFolder(oGuiElement, oOutputParameterHandler, bIsFolder = False)
             oGui.setView('movies')
     oGui.setEndOfDirectory()

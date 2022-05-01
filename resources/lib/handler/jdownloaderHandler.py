@@ -60,23 +60,16 @@ class cJDownloaderHandler:
         bLinkGrabber = self.__getLinkGrabber()
 
         sLinkForJd = self.__createJDUrl(sFileUrl, sHost, sPort, bAutomaticDownload, bLinkGrabber)
-        logger.info('JD Link: ' + str(sLinkForJd))
-                
+        logger.info(f'JD Link: {str(sLinkForJd)}')
+
         oRequestHandler = cRequestHandler(sLinkForJd)
         oRequestHandler.request();
         return True
 
     def __createJDUrl(self, sFileUrl, sHost, sPort, bAutomaticDownload, bLinkGrabber):
-        sGrabber = '0'
-        if (bLinkGrabber == True):
-            sGrabber = '1'
-
-        sAutomaticStart = '0'
-        if (bAutomaticDownload == True):
-            sAutomaticStart = '1'
-            
-        sUrl = 'http://' + str(sHost) + ':' + str(sPort) + '/action/add/links/grabber' + str(sGrabber) + '/start' + str(sAutomaticStart) + '/' + sFileUrl
-        return sUrl
+        sGrabber = '1' if (bLinkGrabber == True) else '0'
+        sAutomaticStart = '1' if (bAutomaticDownload == True) else '0'
+        return f'http://{str(sHost)}:{str(sPort)}/action/add/links/grabber{sGrabber}/start{sAutomaticStart}/{sFileUrl}'
 
     def __checkConnection(self):
         logger.info('check JD Connection')

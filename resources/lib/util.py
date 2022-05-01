@@ -12,15 +12,15 @@ class cUtil:
     def formatTime(self, iSeconds):
         iSeconds = int(iSeconds)
 
-        iMinutes = int(iSeconds / 60)
-        iSeconds = iSeconds - (iMinutes * 60)
+        iMinutes = iSeconds // 60
+        iSeconds -= iMinutes * 60
         if (iSeconds < 10):
-            iSeconds = '0' + str(iSeconds)
+            iSeconds = f'0{iSeconds}'
 
         if (iMinutes < 10):
-            iMinutes = '0' + str(iMinutes)
+            iMinutes = f'0{str(iMinutes)}'
 
-        return str(iMinutes) + ':' + str(iSeconds)
+        return f'{str(iMinutes)}:{str(iSeconds)}'
 
     def urlDecode(self, sUrl):
         return urllib.unquote(sUrl)

@@ -2,18 +2,12 @@ import urllib,re
 
 def checkForReCaptcha(html):
      #check for recaptcha in the page source, and return true or false.
-     if 'recaptcha_challenge_field' in html:
-          return True
-     else:
-          return False
+     return 'recaptcha_challenge_field' in html
 
 
 def checkIfSuceeded(html):
      #reverse the boolean to check for success.
-     if 'recaptcha_challenge_field' in html:
-          return False
-     else:
-          return True
+     return 'recaptcha_challenge_field' not in html
 
 def getCaptcha(html):
      #get the captcha image url and save the challenge token

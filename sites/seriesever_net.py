@@ -14,14 +14,14 @@ SITE_NAME = 'SeriesEver'
 SITE_ICON = 'seriesever.png'
 
 URL_MAIN = 'http://seriesever.net/'
-URL_SERIES = URL_MAIN + 'andere-serien/'
-URL_ANIMES = URL_MAIN + 'anime-serien/'
-URL_MOVIES = URL_MAIN + 'filme/'
+URL_SERIES = f'{URL_MAIN}andere-serien/'
+URL_ANIMES = f'{URL_MAIN}anime-serien/'
+URL_MOVIES = f'{URL_MAIN}filme/'
 
-URL_GENRE = URL_MAIN + 'genre/'
+URL_GENRE = f'{URL_MAIN}genre/'
 
-URL_SEARCH = URL_MAIN + 'service/search'
-URL_GETVIDEOPART = URL_MAIN + 'service/get_video_part'
+URL_SEARCH = f'{URL_MAIN}service/search'
+URL_GETVIDEOPART = f'{URL_MAIN}service/get_video_part'
 
 
 def load():
@@ -79,7 +79,7 @@ def showSearch():
     logger.info('load showSearch')
     oGui = cGui()
     sSearchText = oGui.showKeyBoard()
-    if (sSearchText != False and sSearchText != ''):
+    if sSearchText not in [False, '']:
         _search(oGui, sSearchText)
     else:
         return
@@ -88,12 +88,10 @@ def showSearch():
 
 def _search(oGui, sSearchText):
     params = ParameterHandler()
-    oRequestHandler = cRequestHandler(URL_SEARCH + '?q=' + sSearchText)
+    oRequestHandler = cRequestHandler(f'{URL_SEARCH}?q={sSearchText}')
     oRequestHandler.addHeaderEntry('X-Requested-With', 'XMLHttpRequest')
     sHtmlContent = oRequestHandler.request()
-    series = json.loads(sHtmlContent)
-
-    if series:
+    if series := json.loads(sHtmlContent):
         total = len(series)
         for serie in series:
             sTitle = serie["name"].encode('utf-8')
@@ -142,9 +140,8 @@ def showSeries(sUrl=False):
 
     pages = 1
 
-    if aResult[0]:
-        if RepresentsInt(aResult[1][-1][0]):
-            pages = aResult[1][-1][0]
+    if aResult[0] and RepresentsInt(aResult[1][-1][0]):
+        pages = aResult[1][-1][0]
 
     oGui = cGui()
 
@@ -171,7 +168,12 @@ def showFrontPage():
     oGui = cGui()
     if (aResult[0] == True):
         for link, season, episode, img, title in aResult[1]:
-            guiElement = cGuiElement('%s: Season %s - Episode %s' % (title, season, episode), SITE_IDENTIFIER, 'showHosters')
+            guiElement = cGuiElement(
+                f'{title}: Season {season} - Episode {episode}',
+                SITE_IDENTIFIER,
+                'showHosters',
+            )
+
             guiElement.setMediaType('episode')
             guiElement.setSeason(season)
 
@@ -231,7 +233,12 @@ def showSeasons():
     oGui = cGui()
     if (aResult[0] == True):
         for sId, seasonNum in aResult[1]:
-            guiElement = cGuiElement('%s - Staffel %s' % (sTitle, seasonNum), SITE_IDENTIFIER, 'showEpisodes')
+            guiElement = cGuiElement(
+                f'{sTitle} - Staffel {seasonNum}',
+                SITE_IDENTIFIER,
+                'showEpisodes',
+            )
+
             guiElement.setMediaType('season')
             guiElement.setSeason(seasonNum)
             guiElement.setTVShowTitle(sTitle)
@@ -257,7 +264,10 @@ def showMovie():
     oGui = cGui()
     if (aResult[0] == True):
         for img, eNr, link, title in aResult[1]:
-            guiElement = cGuiElement('Film %s - %s' % (eNr, title), SITE_IDENTIFIER, 'showHosters')
+            guiElement = cGuiElement(
+                f'Film {eNr} - {title}', SITE_IDENTIFIER, 'showHosters'
+            )
+
             guiElement.setThumbnail(img)
             guiElement.setMediaType('movie')
             guiElement.setTVShowTitle(title)
@@ -284,7 +294,10 @@ def showEpisodes():
     oGui = cGui()
     if (aResult[0] == True):
         for eNr, link, title in aResult[1]:
-            guiElement = cGuiElement('Episode %s - %s' % (eNr, title), SITE_IDENTIFIER, 'showHosters')
+            guiElement = cGuiElement(
+                f'Episode {eNr} - {title}', SITE_IDENTIFIER, 'showHosters'
+            )
+
             guiElement.setMediaType('episode')
             guiElement.setSeason(sSeason)
 
@@ -397,12 +410,8 @@ def getHosterUrl(sUrl=False):
     if not sUrl:
         sUrl = oParams.getValue('url')
 
-    results = []
-    result = {}
-    result['streamUrl'] = sUrl
-    result['resolved'] = False
-    results.append(result)
-    return results
+    result = {'streamUrl': sUrl, 'resolved': False}
+    return [result]
 
 
 def __getVideoPage(video_id, part_name, page):
@@ -412,8 +421,7 @@ def __getVideoPage(video_id, part_name, page):
     oRequestHandler.addParameters('part_name', part_name)
     oRequestHandler.addParameters('page', page)
     sHtmlContentTmp = oRequestHandler.request()
-    json_data = json.loads(sHtmlContentTmp)
-    return json_data
+    return json.loads(sHtmlContentTmp)
 
 
 def __get_domain_list(app, domain_list):

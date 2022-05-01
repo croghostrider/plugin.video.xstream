@@ -15,7 +15,7 @@ class cDownload:
         self.__oDialog = oDialog
 
     def __createDownloadFilename(self, sTitle):
-        valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+        valid_chars = f"-_.() {string.ascii_letters}{string.digits}"
         filename = ''.join(c for c in sTitle if c in valid_chars)
         filename = filename.replace(' ','_')
         return filename
@@ -25,12 +25,12 @@ class cDownload:
         # extract header
         try: header = dict([item.split('=') for item in (url.split('|')[1]).split('&')])
         except: header = {}
-        logger.info('Header for download: %s' % (header))
+        logger.info(f'Header for download: {header}')
 
-        url = url.split('|')[0]    
+        url = url.split('|')[0]
         sTitle = self.__createTitle(url, sTitle)
         self.__sTitle = self.__createDownloadFilename(sTitle)
-        
+
         oGui = cGui()
         self.__sTitle = oGui.showKeyBoard(self.__sTitle)
         if (self.__sTitle != False and len(self.__sTitle) > 0):
@@ -40,13 +40,13 @@ class cDownload:
                 dialog = xbmcgui.Dialog()
                 sPath = dialog.browse(3, 'Downloadfolder', 'files', '')
 
-            if (sPath != ''):                
-                sDownloadPath = xbmc.translatePath(sPath +  '%s' % (self.__sTitle, ))
+            if (sPath != ''):        
+                sDownloadPath = xbmc.translatePath(sPath + f'{self.__sTitle}')
                 try:
-                    logger.info('download file: ' + str(url) + ' to ' + str(sDownloadPath))
+                    logger.info(f'download file: {str(url)} to {str(sDownloadPath)}')
                     self.__createProcessDialog()
                     request = urllib2.Request(url, headers=header)
-                    self.__download(urllib2.urlopen(request), sDownloadPath)   
+                    self.__download(urllib2.urlopen(request), sDownloadPath)
                 except Exception as e:
                     logger.error(e)
 
@@ -73,24 +73,21 @@ class cDownload:
             
 
     def __createTitle(self, sUrl, sTitle):        
-        aTitle = sTitle.rsplit('.')        
+        aTitle = sTitle.rsplit('.')
         if (len(aTitle) > 1):
             return sTitle
-        
-        aUrl = sUrl.rsplit('.')        
+
+        aUrl = sUrl.rsplit('.')
         if (len(aUrl) > 1):
             sSuffix = aUrl[-1]
-            sTitle = sTitle + '.' + sSuffix
-            
+            sTitle = f'{sTitle}.{sSuffix}'
+
         return sTitle
 
     def __stateCallBackFunction(self, iCount, iBlocksize, iTotalSize):
         timedif = time.time() - self._startTime
         currentLoaded = float(iCount * iBlocksize)
-        if timedif > 0.0:
-            avgSpd = int(currentLoaded/timedif/1024.0)
-        else:
-            avgSpd = 5
+        avgSpd = int(currentLoaded/timedif/1024.0) if timedif > 0.0 else 5
         iPercent = int( currentLoaded*100/ iTotalSize)
         self.__oDialog.update(iPercent, self.__sTitle, '%s/%s@%dKB/s' %(self.__formatFileSize(currentLoaded),self.__formatFileSize(iTotalSize),avgSpd))
 

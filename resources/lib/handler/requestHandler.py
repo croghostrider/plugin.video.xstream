@@ -52,10 +52,9 @@ class cRequestHandler:
         self.__aHeaderEntries.append(aHeader)
 
     def addParameters(self, sParameterKey, sParameterValue, quote = False):
-        if not quote:
-            self.__aParameters[sParameterKey] = sParameterValue
-        else:
-            self.__aParameters[sParameterKey] = urllib.quote(str(sParameterValue))
+        self.__aParameters[sParameterKey] = (
+            urllib.quote(str(sParameterValue)) if quote else sParameterValue
+        )
 
     def getResponseHeader(self):
         return self.__sResponseHeader
@@ -69,7 +68,7 @@ class cRequestHandler:
         return self.__callRequest()
 
     def getRequestUri(self):
-        return self.__sUrl + '?' + urllib.urlencode(self.__aParameters)
+        return f'{self.__sUrl}?{urllib.urlencode(self.__aParameters)}'
 
     def __setDefaultHeader(self):
         self.addHeaderEntry('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; de-DE; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3')
@@ -178,11 +177,7 @@ class cRequestHandler:
         except Exception as e:
             logger.info(e)
 
-        for entry in cookieJar:
-            if entry.name == sCookieName:
-                return entry
-
-        return False
+        return next((entry for entry in cookieJar if entry.name == sCookieName), False)
 
     def setCookie(self, oCookie):
         cookieJar = mechanize.LWPCookieJar()
@@ -221,7 +216,7 @@ class cRequestHandler:
             except:
                logger.info('Could not read Cache')
             if content:
-                logger.info('read html for %s from cache' % url)
+                logger.info(f'read html for {url} from cache')
                 return content
         return ''
 

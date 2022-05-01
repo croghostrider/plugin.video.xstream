@@ -14,7 +14,7 @@ SITE_NAME = 'G-Stream'
 SITE_ICON = 'gstream.png'
 
 URL_MAIN = 'http://gstream.to'
-URL_LOGIN = URL_MAIN + '/login.php'
+URL_LOGIN = f'{URL_MAIN}/login.php'
 URL_SHOW_MOVIE = 'http://gstream.to/showthread.php?t='
 URL_CATEGORIES = 'http://gstream.to/forumdisplay.php?f='
 URL_SEARCH = 'http://gstream.to/search.php'
@@ -81,11 +81,7 @@ def __login():
     oRequest.ignoreDiscard(True)
     oRequest.request()
 
-    # needed to add this, so other sites doesn't delete the cookie in global search
-    # alternatively we could call login in showHoster, but this would generate more login requests...
-    cookie = oRequest.getCookie("bbsessionhash")
-
-    if cookie:
+    if cookie := oRequest.getCookie("bbsessionhash"):
         cookie.discard = False
         oRequest.setCookie(cookie)
 
@@ -131,7 +127,7 @@ def __getSecurityCookieValue():
     value1 = aResult[3]
     valueName2 = aResult[4]
     value2 = str(eval(exp)+constant)
-    url = '%s%s?%s=%s&%s=%s' % (URL_MAIN, url, valueName1, value1, valueName2, value2)
+    url = f'{URL_MAIN}{url}?{valueName1}={value1}&{valueName2}={value2}'
     oRequest = cRequestHandler(url, caching = False, ignoreErrors = True)
     oRequest.addHeaderEntry('Host', 'gstream.to')
     oRequest.addHeaderEntry('Referer', URL_MAIN)
@@ -224,8 +220,15 @@ def _search(oGui, sSearchText):
     sSearchType = params.getValue('searchType')
     if not sSearchType:
         sSearchType = '528'
-    sUrl = URL_SEARCH+'?do=process&childforums=1&do=process&exactname=1&forumchoice[]='+sSearchType+\
-        '&query=' + str(sSearchText) + '&quicksearch=1&s=&securitytoken=guest&titleonly=1'
+    sUrl = (
+        (
+            f'{URL_SEARCH}?do=process&childforums=1&do=process&exactname=1&forumchoice[]={sSearchType}'
+            + '&query='
+        )
+        + str(sSearchText)
+        + '&quicksearch=1&s=&securitytoken=guest&titleonly=1'
+    )
+
     oRequest = cRequestHandler(sUrl, caching = False)
     oRequest.ignoreDiscard(True)
     oRequest.request()
@@ -245,8 +248,8 @@ def parseMovieResultSite():
 
 def __parseMovieResultSite(oGui, siteUrl, normalySiteUrl = '', iPage = 1):
     if not normalySiteUrl:
-        normalySiteUrl = siteUrl+'&page='
-    params = ParameterHandler()  
+        normalySiteUrl = f'{siteUrl}&page='
+    params = ParameterHandler()
     sPattern = 'class="p1".*?<img class="large" src="(http://[^"]+)".*?<a href="[^"]+" id=".*?([^"_]+)"(.*?)>([^<]+)</a>(.*?)</tr>'
     #sPattern = 'class="alt1Active".*?<a href="(forumdisplay.php[^"]+)".*?>([^<]+)<.*?(src="([^"]+)|</td>).*?</tr>' #Serien
     # request
@@ -256,8 +259,8 @@ def __parseMovieResultSite(oGui, siteUrl, normalySiteUrl = '', iPage = 1):
     aResult = oParser.parse(sHtmlContent, sPattern)
     if (aResult[0] == False):
         return
-    total = len(aResult[1])  
-    for img, link, hdS, title, yearS  in aResult[1]:
+    total = len(aResult[1])
+    for img, link, hdS, title, yearS in aResult[1]:
         sMovieTitle = title.replace('&amp;','&')
         sTitle = sMovieTitle
         sUrl = URL_SHOW_MOVIE + str(link)
@@ -267,13 +270,13 @@ def __parseMovieResultSite(oGui, siteUrl, normalySiteUrl = '', iPage = 1):
             year = aResult[1][0]
         aResult = oParser.parse(hdS, '(title="HD Quali")')
         if aResult[0]:
-            sTitle = sTitle + ' [HD]'
+            sTitle = f'{sTitle} [HD]'
         oGuiElement = cGuiElement(sTitle,SITE_IDENTIFIER,'getHosters')
         oGuiElement.setMediaType('movie')
         oGuiElement.setYear(year)
-        oGuiElement.setThumbnail(img)      
+        oGuiElement.setThumbnail(img)
         params.setParam('movieUrl', sUrl)
-        params.setParam('sMovieTitle', sMovieTitle)       
+        params.setParam('sMovieTitle', sMovieTitle)
         oGui.addFolder(oGuiElement, params, bIsFolder = False, iTotal = total)
 
     # check for next site
@@ -285,11 +288,14 @@ def __parseMovieResultSite(oGui, siteUrl, normalySiteUrl = '', iPage = 1):
         params.setParam('siteUrl', normalySiteUrl+str(int(iPage)+1))
         oGui.addNextPage(SITE_IDENTIFIER,'parseMovieResultSite', params, iTotalPages)
 
-    if  iTotalPages > 1:
-        oGuiElement = cGuiElement('Go to page x of '+str(iTotalPages),SITE_IDENTIFIER,'gotoPage')
+    if iTotalPages > 1:
+        oGuiElement = cGuiElement(
+            f'Go to page x of {str(iTotalPages)}', SITE_IDENTIFIER, 'gotoPage'
+        )
+
         params = ParameterHandler()
         oGui.addFolder(oGuiElement, params)
-                
+
     oGui.setView('movies')            
 
 def gotoPage():
@@ -307,8 +313,7 @@ def __getTotalPages(iPage, sHtml):
     oParser = cParser()
     aResult = oParser.parse(sHtml, sPattern)
     if (aResult[0] == True):
-        iTotalCount = int(aResult[1][0])
-        return iTotalCount
+        return int(aResult[1][0])
     return 0
 
 
@@ -359,20 +364,17 @@ def getHosters():
                     sHoster = sUrl.split('secure/')[-1].split('/')[0].split('.')[-2]
                 else:
                     sHoster = sUrl.split('//')[-1].split('/')[0].split('.')[-2]
-                hoster = {}
-                hoster['link'] = sUrl
-                hoster['name'] = sHoster
+                hoster = {'link': sUrl, 'name': sHoster}
                 hosters.append(hoster)
             hosters.append('getHosterUrl')
     return hosters
 
 def getHosterUrl(sUrl = False):
-    params = ParameterHandler() 
+    params = ParameterHandler()
     if not sUrl:
         sUrl =  params.getValue('url')
-    results = []
-    if 'gstream.to/secure/' in sUrl :
-        sHoster = sUrl.split('secure/')[-1].split('/')[0]       
+    if 'gstream.to/secure/' in sUrl:
+        sHoster = sUrl.split('secure/')[-1].split('/')[0]
         oRequest = cRequestHandler(sUrl, False)
         oRequest.addHeaderEntry('Cookie', params.getValue('securityCookie'))
         oRequest.addHeaderEntry('Referer', params.getValue('movieUrl'))
@@ -380,11 +382,8 @@ def getHosterUrl(sUrl = False):
         try:
             oRequest.request()
             sUrl = oRequest.getRealUrl()
-            sUrl = 'http://%s%s' % (sHoster, sUrl.split(sHoster)[-1])
+            sUrl = f'http://{sHoster}{sUrl.split(sHoster)[-1]}'
         except:
             pass
-    result = {}
-    result['streamUrl'] = sUrl
-    result['resolved'] = False
-    results.append(result)
-    return results
+    result = {'streamUrl': sUrl, 'resolved': False}
+    return [result]

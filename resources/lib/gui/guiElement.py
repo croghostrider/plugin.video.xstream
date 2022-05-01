@@ -85,7 +85,7 @@ class cGuiElement:
         if mediaType in self.MEDIA_TYPES:
             self._mediaType = mediaType
         else:
-            logger.info('Unknown MediaType given for %s' % self.getTitle())
+            logger.info(f'Unknown MediaType given for {self.getTitle()}')
 
     def setSeason(self, season):
         self._season = season
@@ -102,17 +102,20 @@ class cGuiElement:
         try:
             year = int(year)
         except:
-            logger.info('Year given for %s seems not to be a valid number' % self.getTitle())
+            logger.info(f'Year given for {self.getTitle()} seems not to be a valid number')
             return False
         if len(str(year)) != 4:
-            logger.info('Year given for %s has %s digits, required 4 digits' % (self.getTitle(), len(str(year))))
+            logger.info(
+                f'Year given for {self.getTitle()} has {len(str(year))} digits, required 4 digits'
+            )
+
             return False
         if year > 0:
             self._sYear = str(year)
             self.__aItemValues['year'] = year
             return True
         else:
-            logger.info('Year given for %s must be greater than 0' % self.getTitle())
+            logger.info(f'Year given for {self.getTitle()} must be greater than 0')
             return False
 
     def setTitleSecond(self, sTitleSecond):
@@ -165,7 +168,7 @@ class cGuiElement:
   
     def getItemProperties(self):
         for sItemValueKey in self.__aItemValues.keys():
-            if not self.__aItemValues[sItemValueKey]=='':
+            if self.__aItemValues[sItemValueKey] != '':
                 try:
                     self.__aProperties[sItemValueKey] = str(self.__aItemValues[sItemValueKey])
                 except:
@@ -200,7 +203,7 @@ class cGuiElement:
            return False
         if not self._mediaType:
             self.setMediaType(mediaType)
-        if not mode in ['add','replace']:
+        if mode not in ['add', 'replace']:
             logger.info('Wrong meta set mode')
         if not season and self._season:
             season = self._season
@@ -214,10 +217,13 @@ class cGuiElement:
             logger.info(traceback.format_exc())
             return False
         if not self._mediaType:
-            logger.info('Could not get MetaInformations for %s, mediaType not defined' % self.getTitle())
+            logger.info(
+                f'Could not get MetaInformations for {self.getTitle()}, mediaType not defined'
+            )
+
             return False
         oMetaget = metahandlers.MetaData()
-        if self._mediaType == 'movie' or self._mediaType == 'tvshow':
+        if self._mediaType in ['movie', 'tvshow']:
             meta = oMetaget.get_meta(self._mediaType, self.__sTitle)
             #if self._mediaType == 'tvshow' and not self.__aItemValues['TVShowTitle']:
             #    self.setTVShowTitle(self.__sTitle)
@@ -236,9 +242,9 @@ class cGuiElement:
 
         if mode == 'replace':
             self.setItemValues(meta)
-            if not meta['cover_url'] == '':
+            if meta['cover_url'] != '':
                 self.setThumbnail(meta['cover_url'])
-            if not meta['backdrop_url'] == '':
+            if meta['backdrop_url'] != '':
                 self.setFanart(meta['backdrop_url'])
         else:
             meta.update(self.__aItemValues)
